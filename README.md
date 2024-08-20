@@ -1,9 +1,5 @@
 # RAG_Application
 RAG application with Langchain Ollama
-
-<<<<<<< HEAD
-# RAG_Application
-RAG application with Langchain Ollama
 =======
 # ML Chatbot Project
 
@@ -58,6 +54,4 @@ FILE_PATH_PREFIX3='C:/Users/rajku-sa/Documents/MEGA/Ineuron/ML_Chatbot_Project/a
 
 Dockers server path:
 FILE_PATH_PREFIX='/opt/ect/data/lcap/apps/3275/files/'
-``
->>>>>>> 38496d8 (first commit)
-
+```
