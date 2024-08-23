@@ -1,47 +1,40 @@
-import os
-import faiss
-import numpy as np
-from PyPDF2 import PdfReader
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.schema import Document
+from langchain.vectorstores import FAISS
 
 class LocalVectorStore:
     def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2", embedding_dim=384):
         self.embedding_dim = embedding_dim
-        self.index = faiss.IndexFlatL2(embedding_dim)  # L2 distance index
-        self.texts = []  # Store texts associated with the vectors
+        self.documents = [] 
         self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1536, chunk_overlap=100,
             separators=[r"\n\n", r"\n", r"(?<=\. )", " ", ""],
         )
-
-    def add_embeddings(self, text: str):
-        chunks = self.text_splitter.split_text(text)
-        vectors = [self.embeddings.embed_query(chunk) for chunk in chunks]
-        vectors_np = np.array(vectors).astype('float32')
-        self.index.add(vectors_np)
-        self.texts.extend(chunks)
-    
-        
+        self._db = None
+    def _add_and_store(self, docs):
+        if self._db is None:
+            self.documents.extend(PyPDFLoader(pdf_path).load())
+        else:
+            splits = self.text_splitter.split_documents(docs)
+            self._db.add_documents(new_splits)
     def add_pdf(self, pdf_path: str):
-        reader = PdfReader(pdf_path)
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text()
-
-        self.add_embeddings(text)
-
+        self._add_and_store(PyPDFLoader(pdf_path).load())
     def add_text_file(self, text_file_path: str):
-        with open(text_file_path, 'r') as file:
-            text = file.read()
-        self.add_embeddings(text)
-
+        self._add_and_store(TextLoader(text_file_path).load())
     def add_content(self, content: str):
-        self.add_embeddings(content)
-
-    def search(self, query: str, k=5):
-        query_vector = np.array(self.embeddings.embed_query(query)).astype('float32').reshape(1, -1)
-        distances, indices = self.index.search(query_vector, k)
-        results = [(self.texts[i], distances[0][idx]) for idx, i in enumerate(indices[0])]
-        return results
+        self._add_and_store(Document(page_content=content))
+    @property
+    def vector_store(self):
+        if self._db is None:
+            splits = self.text_splitter.split_documents(self.documents)
+            self._db = FAISS.from_documents(splits, self.embeddings)
+        return self._db
+    
+    def save(self, folder_path: str):
+        """ it requires folder name not file name"""
+        self.vector_store.save_local(folder_path)
+    def load(self, folder_path: str):
+        self._db = FAISS.load_local(folder_path, self.embeddings, allow_dangerous_deserialization=True)
