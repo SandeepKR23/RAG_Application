@@ -11,7 +11,7 @@ class RAGSystem:
             "answer": result['result'],
             "source_documents": [doc.page_content for doc in result['source_documents']]
         }
-    def load_model(self):
+    def load_model_phi(self):
         model_name = "microsoft/phi-1_5"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
@@ -33,7 +33,8 @@ class RAGSystem:
             retriever=retriever,
             return_source_documents=True
         )
-    def load_model2(self):
+    def load_model_phi_mini_instruct(self):
+        # not able to run because it takes more memory
         from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
         self.model = AutoModelForCausalLM.from_pretrained(
             "microsoft/Phi-3.5-mini-instruct", 
@@ -55,6 +56,19 @@ class RAGSystem:
         }
         
         self.llm = HuggingFacePipeline(pipeline=pipe, model_kwargs={"temperature": 0.7, "max_length": 2048})
+        retriever = self.vector_store.as_retriever()
+        self.qa_chain = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True
+        )
+    def load_ollama(self):
+        if hasattr(self, "current_model") and self.current_model == "llama3.1:8b":
+            return
+        from langchain.llms import Ollama
+        self.llm = Ollama(model="llama3.1:8b")
+        self.current_model = "llama3.1:8b"
         retriever = self.vector_store.as_retriever()
         self.qa_chain = RetrievalQA.from_chain_type(
             llm=self.llm,
