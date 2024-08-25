@@ -3,6 +3,7 @@ from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from langchain.vectorstores import FAISS
+from langchain.document_loaders.csv_loader import CSVLoader
 
 class LocalVectorStore:
     def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2", embedding_dim=384):
@@ -16,12 +17,14 @@ class LocalVectorStore:
         self._db = None
     def _add_and_store(self, docs):
         if self._db is None:
-            self.documents.extend(PyPDFLoader(pdf_path).load())
+            self.documents.extend(docs)
         else:
             splits = self.text_splitter.split_documents(docs)
             self._db.add_documents(new_splits)
     def add_pdf(self, pdf_path: str):
         self._add_and_store(PyPDFLoader(pdf_path).load())
+    def add_csv_file(self, csv_file_path):
+        self._add_and_store(CSVLoader(csv_file_path).load())
     def add_text_file(self, text_file_path: str):
         self._add_and_store(TextLoader(text_file_path).load())
     def add_content(self, content: str):

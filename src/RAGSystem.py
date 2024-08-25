@@ -76,3 +76,16 @@ class RAGSystem:
             retriever=retriever,
             return_source_documents=True
         )
+    def load_from_ollama_models(self, name= "llama3.1:8b"):
+        if hasattr(self, "current_model") and self.current_model == name:
+            return
+        from langchain.llms import Ollama
+        self.llm = Ollama(model=name)
+        self.current_model = name
+        retriever = self.vector_store.as_retriever()
+        self.qa_chain = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True
+        )
