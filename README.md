@@ -1,5 +1,5 @@
 # RAG application with Langchain Ollama
-=======
+
 # Created a environment
 ```
 conda create -p venv python==3.11
