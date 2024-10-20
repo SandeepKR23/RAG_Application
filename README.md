@@ -1,8 +1,5 @@
-# RAG_Application
-RAG application with Langchain Ollama
+# RAG application with Langchain Ollama
 =======
-# ML Chatbot Project
-
 # Created a environment
 ```
 conda create -p venv python==3.11
